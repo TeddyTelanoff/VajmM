@@ -28,6 +28,7 @@ Value myProg[PROGRAM_SIZE] =
 
 int main()
 {
-	ExecuteProgram(myProg);
+	int ec = ExecuteProgram(myProg);
+	printf("Program exited with code %i (0x%x)\n", ec, ec);
 	system("pause");
 }

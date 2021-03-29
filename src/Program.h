@@ -176,7 +176,7 @@ inline void DbgStackRangeInt()
 
 
 #define PROG_STEP() prog[Reg[RegIp]++]
-inline void ExecuteProgram(const char prog[PROGRAM_SIZE])
+inline int ExecuteProgram(const char prog[PROGRAM_SIZE])
 {
 	memset(Reg, 0, RegCount);
 	memset(Stack, 0, STACK_SIZE);
@@ -266,5 +266,7 @@ inline void ExecuteProgram(const char prog[PROGRAM_SIZE])
 			break;
 		}
 	}
+
+	return Reg[RegAx];
 }
 #undef PROG_STEP

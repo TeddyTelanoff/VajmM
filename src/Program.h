@@ -37,6 +37,7 @@ const char *const RegKindNames[RegCount] =
 
 typedef enum
 {
+	IntExit,
 	IntRet,
 	IntClearRegs,
 
@@ -53,8 +54,8 @@ typedef enum
 	IntMul,
 	IntDiv,
 
-
 	IntJmp,
+	IntCall,
 
 	IntDbgRegs,
 	IntDbgStack,
@@ -67,6 +68,7 @@ Value Arg[4];
 Value Reg[RegCount];
 Value Stack[STACK_SIZE];
 
+inline void RetInt();
 inline void ClearRegsInt();
 
 inline void MovInt();
@@ -81,11 +83,19 @@ inline void AddInt();
 inline void SubInt();
 inline void MulInt();
 inline void DivInt();
+
 inline void JmpInt();
+inline void CallInt();
 
 inline void DbgRegsInt();
 inline void DbgStackInt();
 inline void DbgStackRangeInt();
+
+inline void RetInt()
+{
+	Reg[RegSp]--;
+	Reg[RegIp] = Stack[Reg[RegSp]];
+}
 
 inline void ClearRegsInt()
 { memset(Reg, 0, RegXCount); }
@@ -133,6 +143,14 @@ inline void DivInt()
 inline void JmpInt()
 { Reg[RegIp] = Arg[0]; }
 
+inline void CallInt()
+{
+	Stack[Reg[RegSp]] = Reg[RegIp];
+	Reg[RegSp]++;
+
+	Reg[RegIp] = Arg[0];
+}
+
 
 inline void DbgRegsInt()
 {
@@ -164,11 +182,13 @@ inline void ExecuteProgram(const char prog[PROGRAM_SIZE])
 	memset(Stack, 0, STACK_SIZE);
 
 	IntKind $int;
-
-	while (prog[Reg[RegIp]] != IntRet)
+	while (prog[Reg[RegIp]] != IntExit)
 	{
 		switch ($int = PROG_STEP())
 		{
+		case IntRet:
+			RetInt();
+			break;
 		case IntClearRegs:
 			ClearRegsInt();
 			break;
@@ -227,6 +247,10 @@ inline void ExecuteProgram(const char prog[PROGRAM_SIZE])
 		case IntJmp:
 			Arg[0] = PROG_STEP();
 			JmpInt();
+			break;
+		case IntCall:
+			Arg[0] = PROG_STEP();
+			CallInt();
 			break;
 
 		case IntDbgRegs:

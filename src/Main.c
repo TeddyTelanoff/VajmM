@@ -8,6 +8,11 @@ Value myProg[PROGRAM_SIZE] =
 	IntDbgRegs,
 	IntDbgStackRange, 0, 4,
 
+	IntCall, 8,
+	
+	IntDbgRegs,
+	IntExit,
+
 	IntMovVal, 6, RegAx,
 	IntMovVal, 9, RegBx,
 	IntMul, RegBx, RegAx,
@@ -18,7 +23,6 @@ Value myProg[PROGRAM_SIZE] =
 	IntDbgRegs,
 
 	IntPop, RegAx,
-	IntDbgRegs,
 	IntRet,
 };
 

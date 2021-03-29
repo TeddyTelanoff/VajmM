@@ -1,16 +1,24 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Program.h"
 
-char myProg[PROGRAM_SIZE] =
+Value myProg[PROGRAM_SIZE] =
 {
-	IntDebugRegs,
+	IntDbgRegs,
+	IntDbgStackRange, 0, 4,
+
 	IntMovVal, 6, RegAx,
 	IntMovVal, 9, RegBx,
 	IntMul, RegBx, RegAx,
 
-	IntMovVal, 0, RegIp,
+	IntPush, RegAx,
+	IntDbgStackRange, 0, 4,
+	IntClearRegs,
+	IntDbgRegs,
 
+	IntPop, RegAx,
+	IntDbgRegs,
 	IntRet,
 };
 

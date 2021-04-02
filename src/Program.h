@@ -56,8 +56,7 @@ typedef enum
 
 	IntJmp,
 	IntCall,
-
-	IntPrint,
+	IntKernel,
 
 	IntDbgRegs,
 	IntDbgMem,
@@ -66,14 +65,22 @@ typedef enum
 	IntCount,
 } IntKind;
 
+typedef enum
+{
+	KernelExit,
+	KernelPrint,
+} KernelKind;
+
 typedef struct
 {
+	_Bool Exiting;
 	Value Arg[4];
 	Value Reg[RegCount];
 	Value Memory[MEM_SIZE];
 	const Value *Prog;
 } VajmProgram;
 
+inline void ExitInt(VajmProgram *);
 inline void RetInt(VajmProgram *);
 inline void ClearRegsInt(VajmProgram *);
 
@@ -92,6 +99,7 @@ inline void DivInt(VajmProgram *);
 
 inline void JmpInt(VajmProgram *);
 inline void CallInt(VajmProgram *);
+inline void KernelInt(VajmProgram *);
 
 inline void PrintInt(VajmProgram *);
 
@@ -100,7 +108,7 @@ inline void DbgMemInt(VajmProgram *);
 inline void DbgMemRangeInt(VajmProgram *);
 
 
-#define PROG_STEP() prog[this->Reg[RegIp]++]
+#define PROG_STEP() this->Prog[this->Reg[RegIp]++]
 #define INSTRUCTION_0(name) case Int##name: name##Int(this); break
 #define INSTRUCTION_1(name) case Int##name: this->Arg[0] = PROG_STEP(); name##Int(this); break
 #define INSTRUCTION_2(name) case Int##name: this->Arg[0] = PROG_STEP(); this->Arg[1] = PROG_STEP(); name##Int(this); break
@@ -109,10 +117,11 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 	VajmProgram *this = &(VajmProgram) { .Prog = prog };
 
 	IntKind $int;
-	while (prog[this->Reg[RegIp]] != IntExit)
+	while (!this->Exiting)
 	{
 		switch ($int = PROG_STEP())
 		{
+			INSTRUCTION_0(Exit);
 			INSTRUCTION_0(Ret);
 			INSTRUCTION_0(ClearRegs);
 
@@ -132,8 +141,7 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 
 			INSTRUCTION_1(Jmp);
 			INSTRUCTION_1(Call);
-
-			INSTRUCTION_1(Print);
+			INSTRUCTION_1(Kernel);
 
 			INSTRUCTION_0(DbgRegs);
 			INSTRUCTION_0(DbgMem);
@@ -143,7 +151,6 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 
 	return this->Reg[RegAx];
 }
-#undef PROG_STEP
 #undef INSTRUCTION_0
 #undef INSTRUCTION_1
 #undef INSTRUCTION_2
@@ -208,6 +215,21 @@ inline void CallInt(VajmProgram *this)
 	this->Reg[RegIp] = this->Arg[0];
 }
 
+inline void KernelInt(VajmProgram *this)
+{
+	switch (this->Arg[0])
+	{
+	case KernelExit:
+		this->Arg[1] = PROG_STEP();
+
+		break;
+
+	default:
+		puts("INVALID KERNEL: 0x%x", this->Arg[0]);
+		break;
+	}
+}
+
 
 inline void PrintInt(VajmProgram *this)
 {
@@ -238,3 +260,4 @@ inline void DbgMemRangeInt(VajmProgram *this)
 		printf("[%i] %i\n", this->Arg[0] + i, this->Memory[this->Arg[0] + i]);
 	putchar('\n');
 }
+#undef PROG_STEP

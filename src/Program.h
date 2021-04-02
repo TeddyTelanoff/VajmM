@@ -3,10 +3,10 @@
 #include <assert.h>
 #include <memory.h>
 
-#define PROGRAM_SIZE 0xFF
-#define MEM_SIZE 0xFF
+#define PROGRAM_SIZE 0xFF + 1
+#define MEM_SIZE 0xFF + 1
 
-typedef char Value;
+typedef unsigned char Value;
 
 typedef enum
 {
@@ -60,8 +60,8 @@ typedef enum
 	IntPrint,
 
 	IntDbgRegs,
-	IntDbgStack,
-	IntDbgStackRange,
+	IntDbgMem,
+	IntDbgMemRange,
 
 	IntCount,
 } IntKind;
@@ -96,8 +96,8 @@ inline void CallInt(VajmProgram *);
 inline void PrintInt(VajmProgram *);
 
 inline void DbgRegsInt(VajmProgram *);
-inline void DbgStackInt(VajmProgram *);
-inline void DbgStackRangeInt(VajmProgram *);
+inline void DbgMemInt(VajmProgram *);
+inline void DbgMemRangeInt(VajmProgram *);
 
 
 #define PROG_STEP() prog[this->Reg[RegIp]++]
@@ -136,8 +136,8 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 			INSTRUCTION_1(Print);
 
 			INSTRUCTION_0(DbgRegs);
-			INSTRUCTION_0(DbgStack);
-			INSTRUCTION_2(DbgStackRange);
+			INSTRUCTION_0(DbgMem);
+			INSTRUCTION_2(DbgMemRange);
 		}
 	}
 
@@ -224,17 +224,17 @@ inline void DbgRegsInt(VajmProgram *this)
 	putchar('\n');
 }
 
-inline void DbgStackInt(VajmProgram *this)
+inline void DbgMemInt(VajmProgram *this)
 {
-	for (Value i = 0; i < MEM_SIZE; i++)
+	for (short i = 0; i < MEM_SIZE; i++)
 		printf("[%i] %i\n", i, this->Memory[i]);
 	putchar('\n');
 }
 
-inline void DbgStackRangeInt(VajmProgram *this)
+inline void DbgMemRangeInt(VajmProgram *this)
 {
 	assert(this->Arg[0] + this->Arg[1] < MEM_SIZE);
-	for (Value i = 0; i < this->Arg[1]; i++)
+	for (short i = 0; i < this->Arg[1]; i++)
 		printf("[%i] %i\n", this->Arg[0] + i, this->Memory[this->Arg[0] + i]);
 	putchar('\n');
 }

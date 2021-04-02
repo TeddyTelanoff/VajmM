@@ -24,6 +24,7 @@ Value myProg[PROGRAM_SIZE] =
 	IntStore, RegAx, 5,
 
 	IntPrint, 0,
+	IntDbgMem,
 	IntExit,
 };
 

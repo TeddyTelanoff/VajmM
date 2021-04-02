@@ -57,6 +57,8 @@ typedef enum
 	IntJmp,
 	IntCall,
 
+	IntPrint,
+
 	IntDbgRegs,
 	IntDbgStack,
 	IntDbgStackRange,
@@ -64,209 +66,176 @@ typedef enum
 	IntCount,
 } IntKind;
 
-Value Arg[4];
-Value Reg[RegCount];
-Value Stack[STACK_SIZE];
-
-inline void RetInt();
-inline void ClearRegsInt();
-
-inline void MovInt();
-inline void MovValInt();
-
-inline void LoadInt();
-inline void StoreInt();
-inline void PushInt();
-inline void PopInt();
-
-inline void AddInt();
-inline void SubInt();
-inline void MulInt();
-inline void DivInt();
-
-inline void JmpInt();
-inline void CallInt();
-
-inline void DbgRegsInt();
-inline void DbgStackInt();
-inline void DbgStackRangeInt();
-
-inline void RetInt()
+typedef struct
 {
-	Reg[RegSp]--;
-	Reg[RegIp] = Stack[Reg[RegSp]];
-}
+	Value Arg[4];
+	Value Reg[RegCount];
+	Value Stack[STACK_SIZE];
+	const Value *Prog;
+} VajmProgram;
 
-inline void ClearRegsInt()
-{ memset(Reg, 0, RegXCount); }
+inline void RetInt(VajmProgram *);
+inline void ClearRegsInt(VajmProgram *);
+
+inline void MovInt(VajmProgram *);
+inline void MovValInt(VajmProgram *);
+
+inline void LoadInt(VajmProgram *);
+inline void StoreInt(VajmProgram *);
+inline void PushInt(VajmProgram *);
+inline void PopInt(VajmProgram *);
+
+inline void AddInt(VajmProgram *);
+inline void SubInt(VajmProgram *);
+inline void MulInt(VajmProgram *);
+inline void DivInt(VajmProgram *);
+
+inline void JmpInt(VajmProgram *);
+inline void CallInt(VajmProgram *);
+
+inline void PrintInt(VajmProgram *);
+
+inline void DbgRegsInt(VajmProgram *);
+inline void DbgStackInt(VajmProgram *);
+inline void DbgStackRangeInt(VajmProgram *);
 
 
-inline void MovInt()
-{ Reg[Arg[1]] = Reg[Arg[0]]; }
-
-inline void MovValInt()
-{ Reg[Arg[1]] = Arg[0]; }
-
-
-inline void LoadInt()
-{ Reg[Arg[1]] = Stack[Arg[0]]; }
-
-inline void StoreInt()
-{ Stack[Arg[1]] = Reg[Arg[0]]; }
-
-inline void PushInt()
+#define PROG_STEP() prog[this->Reg[RegIp]++]
+#define INSTRUCTION_0(name) case Int##name: name##Int(this); break
+#define INSTRUCTION_1(name) case Int##name: this->Arg[0] = PROG_STEP(); name##Int(this); break
+#define INSTRUCTION_2(name) case Int##name: this->Arg[0] = PROG_STEP(); this->Arg[1] = PROG_STEP(); name##Int(this); break
+inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 {
-	Stack[Reg[RegSp]] = Reg[Arg[0]];
-	Reg[RegSp]++;
-}
-
-inline void PopInt()
-{
-	Reg[RegSp]--;
-	Reg[Arg[0]] = Stack[Reg[RegSp]];
-}
-
-
-inline void AddInt()
-{ Reg[Arg[1]] += Reg[Arg[0]]; }
-
-inline void SubInt()
-{ Reg[Arg[1]] -= Reg[Arg[0]]; }
-
-inline void MulInt()
-{ Reg[Arg[1]] *= Reg[Arg[0]]; }
-
-inline void DivInt()
-{ Reg[Arg[1]] /= Reg[Arg[0]]; }
-
-
-inline void JmpInt()
-{ Reg[RegIp] = Arg[0]; }
-
-inline void CallInt()
-{
-	Stack[Reg[RegSp]] = Reg[RegIp];
-	Reg[RegSp]++;
-
-	Reg[RegIp] = Arg[0];
-}
-
-
-inline void DbgRegsInt()
-{
-	for (RegKind reg = 0; reg < RegCount; reg++)
-		printf("%s: %i\n", RegKindNames[reg], Reg[reg]);
-	putchar('\n');
-}
-
-inline void DbgStackInt()
-{
-	for (Value i = 0; i < STACK_SIZE; i++)
-		printf("[%i] %i\n", i, Stack[i]);
-	putchar('\n');
-}
-
-inline void DbgStackRangeInt()
-{
-	assert(Arg[0] + Arg[1] < STACK_SIZE);
-	for (Value i = 0; i < Arg[1]; i++)
-		printf("[%i] %i\n", Arg[0] + i, Stack[Arg[0] + i]);
-	putchar('\n');
-}
-
-
-#define PROG_STEP() prog[Reg[RegIp]++]
-inline int ExecuteProgram(const char prog[PROGRAM_SIZE])
-{
-	memset(Reg, 0, RegCount);
-	memset(Stack, 0, STACK_SIZE);
+	VajmProgram *this = &(VajmProgram) { .Prog = prog };
 
 	IntKind $int;
-	while (prog[Reg[RegIp]] != IntExit)
+	while (prog[this->Reg[RegIp]] != IntExit)
 	{
 		switch ($int = PROG_STEP())
 		{
-		case IntRet:
-			RetInt();
-			break;
-		case IntClearRegs:
-			ClearRegsInt();
-			break;
+			INSTRUCTION_0(Ret);
+			INSTRUCTION_0(ClearRegs);
 
-		case IntMov:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			MovInt();
-			break;
-		case IntMovVal:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			MovValInt();
-			break;
+			INSTRUCTION_2(Mov);
+			INSTRUCTION_2(MovVal);
 
-		case IntLoad:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			LoadInt();
-			break;
-		case IntStore:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			StoreInt();
-			break;
-		case IntPush:
-			Arg[0] = PROG_STEP();
-			PushInt();
-			break;
-		case IntPop:
-			Arg[0] = PROG_STEP();
-			PopInt();
-			break;
+			INSTRUCTION_2(Load);
+			INSTRUCTION_2(Store);
 
-		case IntAdd:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			AddInt();
-			break;
-		case IntSub:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			SubInt();
-			break;
-		case IntMul:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			MulInt();
-			break;
-		case IntDiv:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			DivInt();
-			break;
+			INSTRUCTION_1(Push);
+			INSTRUCTION_1(Pop);
 
-		case IntJmp:
-			Arg[0] = PROG_STEP();
-			JmpInt();
-			break;
-		case IntCall:
-			Arg[0] = PROG_STEP();
-			CallInt();
-			break;
+			INSTRUCTION_2(Add);
+			INSTRUCTION_2(Sub);
+			INSTRUCTION_2(Mul);
+			INSTRUCTION_2(Div);
 
-		case IntDbgRegs:
-			DbgRegsInt();
-			break;
-		case IntDbgStack:
-			DbgStackInt();
-			break;
-		case IntDbgStackRange:
-			Arg[0] = PROG_STEP();
-			Arg[1] = PROG_STEP();
-			DbgStackRangeInt();
-			break;
+			INSTRUCTION_1(Jmp);
+			INSTRUCTION_1(Call);
+
+			INSTRUCTION_1(Print);
+
+			INSTRUCTION_0(DbgRegs);
+			INSTRUCTION_0(DbgStack);
+			INSTRUCTION_2(DbgStackRange);
 		}
 	}
 
-	return Reg[RegAx];
+	return this->Reg[RegAx];
 }
 #undef PROG_STEP
+#undef INSTRUCTION_0
+#undef INSTRUCTION_1
+#undef INSTRUCTION_2
+
+inline void RetInt(VajmProgram *this)
+{
+	this->Reg[RegSp]--;
+	this->Reg[RegIp] = this->Stack[this->Reg[RegSp]];
+}
+
+inline void ClearRegsInt(VajmProgram *this)
+{ memset(this->Reg, 0, RegXCount); }
+
+
+inline void MovInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] = this->Reg[this->Arg[0]]; }
+
+inline void MovValInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] = this->Arg[0]; }
+
+
+inline void LoadInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] = this->Stack[this->Arg[0]]; }
+
+inline void StoreInt(VajmProgram *this)
+{ this->Stack[this->Arg[1]] = this->Reg[this->Arg[0]]; }
+
+inline void PushInt(VajmProgram *this)
+{
+	this->Stack[this->Reg[RegSp]] = this->Reg[this->Arg[0]];
+	this->Reg[RegSp]++;
+}
+
+inline void PopInt(VajmProgram *this)
+{
+	this->Reg[RegSp]--;
+	this->Reg[this->Arg[0]] = this->Stack[this->Reg[RegSp]];
+}
+
+
+inline void AddInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] += this->Reg[this->Arg[0]]; }
+
+inline void SubInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] -= this->Reg[this->Arg[0]]; }
+
+inline void MulInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] *= this->Reg[this->Arg[0]]; }
+
+inline void DivInt(VajmProgram *this)
+{ this->Reg[this->Arg[1]] /= this->Reg[this->Arg[0]]; }
+
+
+inline void JmpInt(VajmProgram *this)
+{ this->Reg[RegIp] = this->Arg[0]; }
+
+inline void CallInt(VajmProgram *this)
+{
+	this->Stack[this->Reg[RegSp]] = this->Reg[RegIp];
+	this->Reg[RegSp]++;
+
+	this->Reg[RegIp] = this->Arg[0];
+}
+
+
+inline void PrintInt(VajmProgram *this)
+{
+	const char *ptr = this->Prog;
+	ptr += this->Arg[0];
+
+	puts(ptr);
+}
+
+
+inline void DbgRegsInt(VajmProgram *this)
+{
+	for (RegKind reg = 0; reg < RegCount; reg++)
+		printf("%s: %i\n", RegKindNames[reg], this->Reg[reg]);
+	putchar('\n');
+}
+
+inline void DbgStackInt(VajmProgram *this)
+{
+	for (Value i = 0; i < STACK_SIZE; i++)
+		printf("[%i] %i\n", i, this->Stack[i]);
+	putchar('\n');
+}
+
+inline void DbgStackRangeInt(VajmProgram *this)
+{
+	assert(this->Arg[0] + this->Arg[1] < STACK_SIZE);
+	for (Value i = 0; i < this->Arg[1]; i++)
+		printf("[%i] %i\n", this->Arg[0] + i, this->Stack[this->Arg[0] + i]);
+	putchar('\n');
+}

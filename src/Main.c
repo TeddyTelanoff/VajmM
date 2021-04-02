@@ -5,25 +5,10 @@
 
 Value myProg[PROGRAM_SIZE] =
 {
-	IntDbgRegs,
-	IntDbgStackRange, 0, 4,
-
-	IntCall, 8,
-	
-	IntDbgRegs,
+	IntPrint, 3,
 	IntExit,
 
-	IntMovVal, 6, RegAx,
-	IntMovVal, 9, RegBx,
-	IntMul, RegBx, RegAx,
-
-	IntPush, RegAx,
-	IntDbgStackRange, 0, 4,
-	IntClearRegs,
-	IntDbgRegs,
-
-	IntPop, RegAx,
-	IntRet,
+	'H', 'E', 'L', 'L', 'O', 0,
 };
 
 int main()

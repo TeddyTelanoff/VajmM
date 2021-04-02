@@ -211,9 +211,8 @@ inline void CallInt(VajmProgram *this)
 
 inline void PrintInt(VajmProgram *this)
 {
-	const char *ptr = this->Prog;
+	const char *ptr = this->Stack;
 	ptr += this->Arg[0];
-
 	puts(ptr);
 }
 

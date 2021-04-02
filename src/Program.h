@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <memory.h>
 
-#define PROGRAM_SIZE 255
-#define STACK_SIZE 64
+#define PROGRAM_SIZE 0xFF
+#define MEM_SIZE 0xFF
 
 typedef char Value;
 
@@ -70,7 +70,7 @@ typedef struct
 {
 	Value Arg[4];
 	Value Reg[RegCount];
-	Value Stack[STACK_SIZE];
+	Value Memory[MEM_SIZE];
 	const Value *Prog;
 } VajmProgram;
 
@@ -151,7 +151,7 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 inline void RetInt(VajmProgram *this)
 {
 	this->Reg[RegSp]--;
-	this->Reg[RegIp] = this->Stack[this->Reg[RegSp]];
+	this->Reg[RegIp] = this->Memory[this->Reg[RegSp]];
 }
 
 inline void ClearRegsInt(VajmProgram *this)
@@ -166,21 +166,21 @@ inline void MovValInt(VajmProgram *this)
 
 
 inline void LoadInt(VajmProgram *this)
-{ this->Reg[this->Arg[1]] = this->Stack[this->Arg[0]]; }
+{ this->Reg[this->Arg[1]] = this->Memory[this->Arg[0]]; }
 
 inline void StoreInt(VajmProgram *this)
-{ this->Stack[this->Arg[1]] = this->Reg[this->Arg[0]]; }
+{ this->Memory[this->Arg[1]] = this->Reg[this->Arg[0]]; }
 
 inline void PushInt(VajmProgram *this)
 {
-	this->Stack[this->Reg[RegSp]] = this->Reg[this->Arg[0]];
+	this->Memory[this->Reg[RegSp]] = this->Reg[this->Arg[0]];
 	this->Reg[RegSp]++;
 }
 
 inline void PopInt(VajmProgram *this)
 {
 	this->Reg[RegSp]--;
-	this->Reg[this->Arg[0]] = this->Stack[this->Reg[RegSp]];
+	this->Reg[this->Arg[0]] = this->Memory[this->Reg[RegSp]];
 }
 
 
@@ -202,7 +202,7 @@ inline void JmpInt(VajmProgram *this)
 
 inline void CallInt(VajmProgram *this)
 {
-	this->Stack[this->Reg[RegSp]] = this->Reg[RegIp];
+	this->Memory[this->Reg[RegSp]] = this->Reg[RegIp];
 	this->Reg[RegSp]++;
 
 	this->Reg[RegIp] = this->Arg[0];
@@ -211,7 +211,7 @@ inline void CallInt(VajmProgram *this)
 
 inline void PrintInt(VajmProgram *this)
 {
-	const char *ptr = this->Stack;
+	const char *ptr = this->Memory;
 	ptr += this->Arg[0];
 	puts(ptr);
 }
@@ -226,15 +226,15 @@ inline void DbgRegsInt(VajmProgram *this)
 
 inline void DbgStackInt(VajmProgram *this)
 {
-	for (Value i = 0; i < STACK_SIZE; i++)
-		printf("[%i] %i\n", i, this->Stack[i]);
+	for (Value i = 0; i < MEM_SIZE; i++)
+		printf("[%i] %i\n", i, this->Memory[i]);
 	putchar('\n');
 }
 
 inline void DbgStackRangeInt(VajmProgram *this)
 {
-	assert(this->Arg[0] + this->Arg[1] < STACK_SIZE);
+	assert(this->Arg[0] + this->Arg[1] < MEM_SIZE);
 	for (Value i = 0; i < this->Arg[1]; i++)
-		printf("[%i] %i\n", this->Arg[0] + i, this->Stack[this->Arg[0] + i]);
+		printf("[%i] %i\n", this->Arg[0] + i, this->Memory[this->Arg[0] + i]);
 	putchar('\n');
 }

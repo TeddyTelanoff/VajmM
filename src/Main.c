@@ -6,29 +6,17 @@
 
 Value myProg[PROGRAM_SIZE] =
 {
-	IntMovVal, 'H', RegAx,
-	IntStore, RegAx, 0,
-
-	IntMovVal, 'e', RegAx,
-	IntStore, RegAx, 1,
-
-	IntMovVal, 'l', RegAx,
-	IntStore, RegAx, 2,
-
-	IntMovVal, 'l', RegAx,
-	IntStore, RegAx, 3,
-
-	IntMovVal, 'o', RegAx,
-	IntStore, RegAx, 4,
-
-	IntMovVal, 0, RegAx,
-	IntStore, RegAx, 5,
-
 	IntKernel, KernelPrint, 0,
 
 	IntMovVal, 69, RegAx,
+	IntPush, RegAx,
+	IntDbgMemRange, 250, 255,
+
+	IntMov, RegSp, RegAx,
 	IntKernel, KernelExit,
 };
+
+Value myProgROM[PROGRAM_SIZE] = "Hello, world!";
 
 int main()
 {
@@ -37,7 +25,10 @@ int main()
 	//fread(myProg, sizeof(Value), PROGRAM_SIZE, fs);
 	//fclose(fs);
 
-	int ec = ExecuteProgram(myProg);
+	VajmProgram *prog = CreateProgram(myProg, myProgROM);
+	int ec = ExecuteProgram(prog);
 	printf("Program exited with code %i (0x%x)\n", ec, ec);
+	DestroyProgram(prog);
+
 	system("pause");
 }

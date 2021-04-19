@@ -106,14 +106,27 @@ inline void DbgMemInt(VajmProgram *);
 inline void DbgMemRangeInt(VajmProgram *);
 
 
+inline VajmProgram *CreateProgram(const Value prog[PROGRAM_SIZE], const Value rom[MEM_SIZE])
+{
+	VajmProgram *this = calloc(1, sizeof(VajmProgram));
+	if (this == NULL)
+		abort();
+	this->Prog = prog;
+	this->Reg[RegSp] = 0xFF;
+	if (rom)
+		memcpy(this->Memory, rom, MEM_SIZE);
+	return this;
+}
+
+inline void DestroyProgram(VajmProgram *this)
+{ free(this); }
+
 #define PROG_STEP() this->Prog[this->Reg[RegIp]++]
 #define INSTRUCTION_0(name) case Int##name: name##Int(this); break
 #define INSTRUCTION_1(name) case Int##name: this->Arg[0] = PROG_STEP(); name##Int(this); break
 #define INSTRUCTION_2(name) case Int##name: this->Arg[0] = PROG_STEP(); this->Arg[1] = PROG_STEP(); name##Int(this); break
-inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
+inline int ExecuteProgram(VajmProgram *this)
 {
-	VajmProgram *this = &(VajmProgram) { .Prog = prog };
-
 	IntKind $int;
 	while (!this->Exiting)
 	{
@@ -182,12 +195,12 @@ inline void StoreInt(VajmProgram *this)
 inline void PushInt(VajmProgram *this)
 {
 	this->Memory[this->Reg[RegSp]] = this->Reg[this->Arg[0]];
-	this->Reg[RegSp]++;
+	this->Reg[RegSp]--;
 }
 
 inline void PopInt(VajmProgram *this)
 {
-	this->Reg[RegSp]--;
+	this->Reg[RegSp]++;
 	this->Reg[this->Arg[0]] = this->Memory[this->Reg[RegSp]];
 }
 
@@ -254,9 +267,9 @@ inline void DbgMemInt(VajmProgram *this)
 
 inline void DbgMemRangeInt(VajmProgram *this)
 {
-	assert(this->Arg[0] + this->Arg[1] < MEM_SIZE);
-	for (short i = 0; i < this->Arg[1]; i++)
-		printf("[%i] %i\n", this->Arg[0] + i, this->Memory[this->Arg[0] + i]);
+	assert(this->Arg[0] < MEM_SIZE && this->Arg[1] < MEM_SIZE);
+	for (short i = this->Arg[0]; i <= this->Arg[1]; i++)
+		printf("[%i] %i\n", i, this->Memory[i]);
 	putchar('\n');
 }
 #undef PROG_STEP

@@ -101,8 +101,6 @@ inline void JmpInt(VajmProgram *);
 inline void CallInt(VajmProgram *);
 inline void KernelInt(VajmProgram *);
 
-inline void PrintInt(VajmProgram *);
-
 inline void DbgRegsInt(VajmProgram *);
 inline void DbgMemInt(VajmProgram *);
 inline void DbgMemRangeInt(VajmProgram *);
@@ -154,6 +152,9 @@ inline int ExecuteProgram(const Value prog[PROGRAM_SIZE])
 #undef INSTRUCTION_0
 #undef INSTRUCTION_1
 #undef INSTRUCTION_2
+
+inline void ExitInt(VajmProgram *this)
+{ this->Exiting = 1; }
 
 inline void RetInt(VajmProgram *this)
 {
@@ -220,22 +221,20 @@ inline void KernelInt(VajmProgram *this)
 	switch (this->Arg[0])
 	{
 	case KernelExit:
-		this->Arg[1] = PROG_STEP();
-
+		ExitInt(this);
 		break;
+	case KernelPrint:
+	{
+		const char *ptr = this->Memory;
+		ptr += PROG_STEP();
+		puts(ptr);
+		break;
+	}
 
 	default:
 		puts("INVALID KERNEL: 0x%x", this->Arg[0]);
 		break;
 	}
-}
-
-
-inline void PrintInt(VajmProgram *this)
-{
-	const char *ptr = this->Memory;
-	ptr += this->Arg[0];
-	puts(ptr);
 }
 
 
